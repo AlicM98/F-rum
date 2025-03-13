@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fórum Interativo</title>
+
+    <!-- Adicionando a logo na aba do navegador -->
+    <link rel="icon" type="image/png" href="img/logo.jpg">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5D5FEF;
+            --secondary-color: #4B4DCC;
+            --accent-color: #FFD166;
+            --background-color: #F7F9FC;
+            --card-background: #FFFFFF;
+            --text-color: #2D3748;
+            --muted-text: #718096;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --border-radius: 12px;
+            --spacing: 24px;
+            --delete-color: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #F7F9FC 0%, #EDEFF5 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: var(--spacing);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-background);
+            padding: var(--spacing);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: var(--spacing);
+            color: var(--text-color);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #FAFBFC;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(93, 95, 239, 0.2);
+            outline: none;
+            background: #FFFFFF;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 14px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(93, 95, 239, 0.3);
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(93, 95, 239, 0.4);
+        }
+
+        .search-container {
+            margin-bottom: var(--spacing);
+        }
+
+        .search-container input {
+            padding-left: 40px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 12px center;
+        }
+
+        .topic {
+            background: #F8FAFC;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #EDF2F7;
+            animation: slideIn 0.4s ease-out;
+            display: none;
+        }
+
+        .topic.active {
+            display: block;
+        }
+
+        .topic h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .question {
+            background: #FFFFFF;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid var(--accent-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+
+        .question b {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .answer {
+            background: #F1F5F9;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 6px;
+            color: var(--muted-text);
+            font-size: 0.95rem;
+        }
+
+        .delete-question-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 10px;
+            background: var(--delete-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-question-btn:hover {
+            background: #DC2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            h2 { font-size: 2rem; }
+            button { padding: 12px; }
+            .delete-question-btn { padding: 4px 8px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Fórum Interativo</h2>
+
+        <div class="form-group">
+            <select id="topicDropdown">
+                <option value="">Selecione um tópico</option>
+            </select>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Pesquisar tópicos ou perguntas...">
+        </div>
+
+        <div class="form-group">
+            <h3>Novo Tópico</h3>
+            <input type="text" id="topicTitle" placeholder="Título do tópico" aria-label="Título do novo tópico">
+            <button id="createTopicBtn">Criar Tópico</button>
+        </div>
+
+        <div id="topicsContainer"></div>
+    </div>
+
+    <script>
+        class Forum {
+            constructor() {
+                this.topics = new Map();
+                this.topicElements = new Map();
+                this.searchCache = new Map();
+                this.initElements();
+                this.loadFromLocalStorage(); // Carrega dados salvos ao iniciar
+                this.initEventListeners();
+            }
+
+            initElements() {
+                this.elements = {
+                    topicDropdown: document.getElementById('topicDropdown'),
+                    searchInput: document.getElementById('searchInput'),
+                    topicTitle: document.getElementById('topicTitle'),
+                    createTopicBtn: document.getElementById('createTopicBtn'),
+                    topicsContainer: document.getElementById('topicsContainer')
+                };
+            }
+
+            initEventListeners() {
+                this.elements.createTopicBtn.addEventListener('click', () => this.addTopic());
+                this.elements.topicTitle.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTopic();
+                });
+                this.elements.topicDropdown.addEventListener('change', () => this.showSelectedTopic());
+                this.elements.searchInput.addEventListener('input', this.debounce(() => {
+                    this.searchContent(this.elements.searchInput.value);
+                }, 300));
+            }
+
+            loadFromLocalStorage() {
+                const savedData = localStorage.getItem('forumData');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    data.forEach(({ id, title, questions }) => {
+                        const normalizedTitle = title.toLowerCase();
+                        const topicElement = this.createTopicElement(title, id);
+                        this.elements.topicsContainer.appendChild(topicElement);
+                        this.topics.set(normalizedTitle, id);
+                        this.topicElements.set(id, { element: topicElement, title, questions: [] });
+
+                        // Recria as perguntas salvas
+                        questions.forEach(q => {
+                            const questionDiv = document.createElement('div');
+                            questionDiv.className = 'question';
+                            questionDiv.innerHTML = `
+                                <b>${this.escapeHtml(q.question)}</b>
+                                <p class="answer">${this.escapeHtml(q.answer)}</p>
+                                <button class="delete-question-btn">Excluir</button>
+                            `;
+                            const deleteBtn = questionDiv.querySelector('.delete-question-btn');
+                            deleteBtn.addEventListener('click', () => this.deleteQuestion(id, questionDiv));
+                            topicElement.querySelector('.questions').appendChild(questionDiv);
+                            this.topicElements.get(id).questions.push(q);
+                        });
+                    });
+                    this.updateDropdown();
+                }
+            }
+
+            saveToLocalStorage() {
+                const data = Array.from(this.topicElements.entries()).map(([id, { title, questions }]) => ({
+                    id,
+                    title,
+                    questions
+                }));
+                localStorage.setItem('forumData', JSON.stringify(data));
+            }
+
+            addTopic() {
+                const title = this.elements.topicTitle.value.trim();
+                if (!title) {
+                    this.showAlert('Por favor, insira um título para o tópico');
+                    return;
+                }
+
+                const normalizedTitle = title.toLowerCase();
+                if (this.topics.has(normalizedTitle)) {
+                    this.showAlert('Este título já existe');
+                    return;
+                }
+
+                const topicId = `topic-${Date.now()}`;
+                const topicElement = this.createTopicElement(title, topicId);
+                
+                this.elements.topicsContainer.appendChild(topicElement);
+                this.topics.set(normalizedTitle, topicId);
+                this.topicElements.set(topicId, { element: topicElement, title, questions: [] });
+                
+                this.updateDropdown();
+                this.elements.topicTitle.value = '';
+                topicElement.classList.add('active');
+                topicElement.scrollIntoView({ behavior: 'smooth' });
+                this.saveToLocalStorage(); // Salva após adicionar tópico
+            }
+
+            createTopicElement(title, id) {
+                const div = document.createElement('div');
+                div.className = 'topic';
+                div.id = id;
+                div.innerHTML = `
+                    <h3>${this.escapeHtml(title)}</h3>
+                    <div class="form-group">
+                        <input type="text" placeholder="Sua pergunta" class="questionInput">
+                        <textarea placeholder="Resposta" class="answerInput"></textarea>
+                        <button class="addQuestionBtn">Adicionar Pergunta</button>
+                    </div>
+                    <div class="questions"></div>
+                `;
+                
+                div.querySelector('.addQuestionBtn').addEventListener('click', () => this.addQuestion(id));
+                return div;
+            }
+
+            addQuestion(topicId) {
+                const topicData = this.topicElements.get(topicId);
+                const topicElement = topicData.element;
+                const questionInput = topicElement.querySelector('.questionInput');
+                const answerInput = topicElement.querySelector('.answerInput');
+                const questionText = questionInput.value.trim();
+                const answerText = answerInput.value.trim();
+
+                if (!questionText || !answerText) {
+                    this.showAlert('Preencha ambos os campos: pergunta e resposta');
+                    return;
+                }
+
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                questionDiv.innerHTML = `
+                    <b>${this.escapeHtml(questionText)}</b>
+                    <p class="answer">${this.escapeHtml(answerText)}</p>
+                    <button class="delete-question-btn">Excluir</button>
+                `;
+
+                questionDiv.querySelector('.delete-question-btn').addEventListener('click', () => this.deleteQuestion(topicId, questionDiv));
+                topicElement.querySelector('.questions').appendChild(questionDiv);
+                topicData.questions.push({ question: questionText, answer: answerText });
+                
+                questionInput.value = '';
+                answerInput.value = '';
+                this.saveToLocalStorage(); // Salva após adicionar pergunta
+            }
+
+            deleteQuestion(topicId, questionDiv) {
+                const topicData = this.topicElements.get(topicId);
+                questionDiv.remove();
+                topicData.questions = Array.from(topicData.element.querySelector('.questions').children).map(q => ({
+                    question: q.querySelector('b').textContent,
+                    answer: q.querySelector('.answer').textContent
+                }));
+                this.searchCache.clear();
+                this.saveToLocalStorage(); // Salva após excluir pergunta
+            }
+
+            updateDropdown() {
+                const fragment = document.createDocumentFragment();
+                fragment.appendChild(new Option('Selecione um tópico', ''));
+                Array.from(this.topics.entries())
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .forEach(([title, id]) => fragment.appendChild(new Option(title, id)));
+                this.elements.topicDropdown.innerHTML = '';
+                this.elements.topicDropdown.appendChild(fragment);
+            }
+
+            showSelectedTopic() {
+                const selectedId = this.elements.topicDropdown.value;
+                this.topicElements.forEach(data => {
+                    data.element.classList.toggle('active', data.element.id === selectedId);
+                });
+            }
+
+            searchContent(searchText) {
+                const text = searchText.toLowerCase().trim();
+                if (this.searchCache.has(text)) {
+                    this.applySearchResults(this.searchCache.get(text));
+                    return;
+                }
+
+                const results = new Map();
+                this.topicElements.forEach((data, id) => {
+                    const titleMatch = data.title.toLowerCase().includes(text);
+                    const questionMatches = new Set();
+                    data.questions.forEach((q, index) => {
+                        if (q.question.toLowerCase().includes(text) || q.answer.toLowerCase().includes(text)) {
+                            questionMatches.add(index);
+                        }
+                    });
+                    results.set(data.element, { visible: titleMatch || questionMatches.size > 0, questions: questionMatches });
+                });
+
+                this.searchCache.set(text, results);
+                this.applySearchResults(results);
+            }
+
+            applySearchResults(results) {
+                results.forEach((result, topic) => {
+                    topic.classList.toggle('active', result.visible);
+                    const questions = topic.querySelectorAll('.question');
+                    questions.forEach((q, index) => q.classList.toggle('hidden', !result.questions.has(index)));
+                });
+            }
+
+            showAlert(message) {
+                alert(message);
+            }
+
+            escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            debounce(func, wait) {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func(...args), wait);
+                };
+            }
+        }
+
+        const forum = new Forum();
+    </script>
+</body>
+</html>
