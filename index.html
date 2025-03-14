@@ -351,8 +351,7 @@ button:hover {
 
             this.updateDropdown();
             this.elements.topicTitle.value = '';
-            topicElement.classList.add('active');
-            topicElement.scrollIntoView({ behavior: 'smooth' });
+            this.showSelectedTopic();
         }
 
         createTopicElement(title, id, questions = []) {
@@ -420,6 +419,14 @@ button:hover {
 
             questionInput.value = '';
             answerInput.value = '';
+        }
+
+        showSelectedTopic() {
+            const selectedId = this.elements.topicDropdown.value;
+            this.topicElements.forEach((data, id) => {
+                const isActive = id === selectedId;
+                data.element.style.display = isActive ? 'block' : 'none';
+            });
         }
 
         updateDropdown() {
