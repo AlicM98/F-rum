@@ -460,6 +460,92 @@
             }
         }
 
+        async function fetchForumData() {
+    const repo = "SEU_USUARIO/forum-interativo";
+    const filePath = "indexData.json";
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+
+    try {
+        const response = await fetch(apiUrl, {
+            headers: { "Accept": "application/vnd.github.v3.raw" }
+        });
+
+        if (!response.ok) throw new Error("Erro ao carregar os dados.");
+
+        const data = await response.json();
+        console.log("Dados carregados:", data);
+        return data;
+    } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+        return { topics: [] }; // Retorna um JSON vazio em caso de erro
+    }
+}
+
+        async function saveForumData(updatedData) {
+    const token = "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";  // ⚠️ Proteja esse token!
+    const repo = "SEU_USUARIO/forum-interativo";
+    const filePath = "forumData.json";
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+
+    try {
+        // Primeiro, precisamos obter o SHA do arquivo atual
+        const getResponse = await fetch(apiUrl, {
+            headers: { "Authorization": `token ${token}` }
+        });
+
+        const fileData = await getResponse.json();
+        const sha = fileData.sha; // O SHA é necessário para sobrescrever um arquivo no GitHub
+
+        // Converter os dados para Base64
+        const content = btoa(JSON.stringify(updatedData, null, 2));
+
+        // Enviar a atualização
+        const updateResponse = await fetch(apiUrl, {
+            method: "PUT",
+            headers: {
+                "Authorization": `token ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: "Atualizando fórum",
+                content: content,
+                sha: sha
+            })
+        });
+
+        if (!updateResponse.ok) throw new Error("Erro ao salvar os dados.");
+        console.log("Dados salvos com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+    }
+}
+
+        document.addEventListener("DOMContentLoaded", async () => {
+    const forumData = await fetchForumData();
+    
+    if (forumData.topics.length > 0) {
+        forumData.topics.forEach(topic => {
+            console.log("Tópico carregado:", topic.title);
+        });
+    }
+
+    document.getElementById("createTopicBtn").addEventListener("click", async () => {
+        const title = document.getElementById("topicTitle").value.trim();
+        if (!title) {
+            alert("Por favor, insira um título para o tópico.");
+            return;
+        }
+
+        forumData.topics.push({ id: Date.now().toString(), title, questions: [] });
+
+        await saveForumData(forumData);
+        alert("Tópico salvo com sucesso!");
+        document.getElementById("topicTitle").value = ""; // Limpa o campo
+    });
+});
+
+        
         const forum = new Forum();
     </script>
 </body>
