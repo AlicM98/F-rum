@@ -16,7 +16,7 @@
             </select>
         </div>
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Pesquisar tópicos ou perguntas...">
+            <input type="text" id="searchInput" placeholder="Pesquisar por palavras-chave...">
         </div>
         <div class="form-group">
             <h3>Novo Tópico</h3>
@@ -507,31 +507,41 @@
             searchTopicsAndQuestions() {
                 const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
                 const selectedId = this.elements.topicDropdown.value;
-                console.log("Pesquisando por:", searchTerm, "no tópico:", selectedId);
+                console.log("Pesquisando por palavras-chave:", searchTerm, "no tópico:", selectedId);
+
+                if (!selectedId) {
+                    this.topicElements.forEach((data) => {
+                        data.element.style.display = 'none';
+                    });
+                    return;
+                }
 
                 this.topicElements.forEach((data, id) => {
                     const topicElement = data.element;
-                    const isSelected = id === selectedId;
-
-                    if (!isSelected) {
+                    if (id !== selectedId) {
                         topicElement.style.display = 'none';
                         return;
                     }
 
-                    const titleMatch = data.title.toLowerCase().includes(searchTerm);
-                    let hasVisibleQuestions = false;
-
                     const questionsContainer = topicElement.querySelector('.questions');
                     const questionElements = questionsContainer.querySelectorAll('.question');
-                    questionElements.forEach(questionElement => {
+                    let hasMatches = false;
+
+                    questionElements.forEach((questionElement) => {
                         const questionText = questionElement.querySelector('b').textContent.toLowerCase();
                         const answerText = questionElement.querySelector('.answer').textContent.toLowerCase();
                         const matches = questionText.includes(searchTerm) || answerText.includes(searchTerm);
-                        questionElement.style.display = matches || searchTerm === '' ? 'block' : 'none';
-                        if (matches || searchTerm === '') hasVisibleQuestions = true;
+
+                        if (matches || searchTerm === '') {
+                            questionElement.style.display = 'block';
+                            hasMatches = true;
+                        } else {
+                            questionElement.style.display = 'none';
+                        }
                     });
 
-                    topicElement.style.display = (titleMatch || hasVisibleQuestions) && isSelected ? 'block' : 'none';
+                    // Sempre exibir o tópico selecionado, mesmo que não haja correspondências, para manter o formulário visível
+                    topicElement.style.display = 'block';
                 });
             }
 
