@@ -493,6 +493,7 @@
                 this.topicElements.forEach((data, id) => {
                     data.element.style.display = id === selectedId ? 'block' : 'none';
                 });
+                this.searchTopicsAndQuestions(); // Reaplica a pesquisa ao mudar o tópico
             }
 
             updateDropdown() {
@@ -505,11 +506,20 @@
 
             searchTopicsAndQuestions() {
                 const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
-                console.log("Pesquisando por:", searchTerm);
+                const selectedId = this.elements.topicDropdown.value;
+                console.log("Pesquisando por:", searchTerm, "no tópico:", selectedId);
+
                 this.topicElements.forEach((data, id) => {
                     const topicElement = data.element;
+                    const isSelected = id === selectedId;
+
+                    if (!isSelected) {
+                        topicElement.style.display = 'none';
+                        return;
+                    }
+
                     const titleMatch = data.title.toLowerCase().includes(searchTerm);
-                    let questionsMatch = false;
+                    let hasVisibleQuestions = false;
 
                     const questionsContainer = topicElement.querySelector('.questions');
                     const questionElements = questionsContainer.querySelectorAll('.question');
@@ -518,10 +528,10 @@
                         const answerText = questionElement.querySelector('.answer').textContent.toLowerCase();
                         const matches = questionText.includes(searchTerm) || answerText.includes(searchTerm);
                         questionElement.style.display = matches || searchTerm === '' ? 'block' : 'none';
-                        if (matches) questionsMatch = true;
+                        if (matches || searchTerm === '') hasVisibleQuestions = true;
                     });
 
-                    topicElement.style.display = (titleMatch || questionsMatch || searchTerm === '') && id === this.elements.topicDropdown.value ? 'block' : 'none';
+                    topicElement.style.display = (titleMatch || hasVisibleQuestions) && isSelected ? 'block' : 'none';
                 });
             }
 
@@ -542,4 +552,3 @@
     </script>
 </body>
 </html>
-
