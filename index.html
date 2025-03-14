@@ -244,190 +244,201 @@ button:hover {
         
      </style>   
 
-    <script>
-        const BIN_ID = "67d43e708a456b796675bb3e"; // Substitua pelo seu ID do Bin
-        const API_KEY = "$2a$10$/QVRThELIzbQEwve.0EZv.E4lFz/9bn0.4.Kpw1UIe5FETAk.AEDy"; // Substitua pela sua Master Key (NÃO COMPARTILHE)
-        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+   <script>
+    const BIN_ID = "XXXXXXXXXXXX"; // Substitua pelo seu ID do Bin
+    const API_KEY = "SUA_MASTER_KEY"; // Substitua pela sua Master Key (NÃO COMPARTILHE)
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-        // 🔹 Buscar os dados do JSONBin.io
-        async function fetchIndexData() {
-            try {
-                const response = await fetch(API_URL, {
-                    headers: {
-                        "X-Master-Key": API_KEY
-                    }
-                });
+    // 🔹 Buscar os dados do JSONBin.io
+    async function fetchIndexData() {
+        try {
+            const response = await fetch(API_URL, {
+                headers: { "X-Master-Key": API_KEY }
+            });
 
-                if (!response.ok) throw new Error("Erro ao carregar os dados.");
-                const data = await response.json();
-                console.log("Dados carregados:", data.record);
+            if (!response.ok) throw new Error("Erro ao carregar os dados.");
+            const data = await response.json();
+            console.log("Dados carregados:", data.record);
 
-                return data.record || { topics: [] };
-            } catch (error) {
-                console.error("Erro ao buscar dados:", error);
-                return { topics: [] };
-            }
+            return data.record || { topics: [] };
+        } catch (error) {
+            console.error("Erro ao buscar dados:", error);
+            return { topics: [] };
+        }
+    }
+
+    // 🔹 Salvar os dados no JSONBin.io
+    async function saveIndexData(updatedData) {
+        try {
+            const response = await fetch(API_URL, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": API_KEY
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (!response.ok) throw new Error("Erro ao salvar os dados.");
+            console.log("Dados salvos com sucesso!");
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+        }
+    }
+
+    class Forum {
+        constructor() {
+            this.topics = new Map();
+            this.topicElements = new Map();
+            this.initElements();
+            this.loadFromAPI(); // Carrega os dados do JSONBin.io
+            this.initEventListeners();
         }
 
-        // 🔹 Salvar os dados no JSONBin.io
-        async function saveIndexData(updatedData) {
-            try {
-                const response = await fetch(API_URL, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Master-Key": API_KEY
-                    },
-                    body: JSON.stringify(updatedData)
-                });
-
-                if (!response.ok) throw new Error("Erro ao salvar os dados.");
-                console.log("Dados salvos com sucesso!");
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-            }
+        initElements() {
+            this.elements = {
+                topicDropdown: document.getElementById('topicDropdown'),
+                searchInput: document.getElementById('searchInput'),
+                topicTitle: document.getElementById('topicTitle'),
+                createTopicBtn: document.getElementById('createTopicBtn'),
+                topicsContainer: document.getElementById('topicsContainer')
+            };
         }
 
-        class Forum {
-            constructor() {
-                this.topics = new Map();
-                this.topicElements = new Map();
-                this.initElements();
-                this.loadFromAPI(); // Carrega os dados do JSONBin.io
-                this.initEventListeners();
-            }
+        initEventListeners() {
+            this.elements.createTopicBtn.addEventListener('click', () => this.addTopic());
+            this.elements.topicTitle.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.addTopic();
+            });
+            this.elements.topicDropdown.addEventListener('change', () => this.showSelectedTopic());
+        }
 
-            initElements() {
-                this.elements = {
-                    topicDropdown: document.getElementById('topicDropdown'),
-                    searchInput: document.getElementById('searchInput'),
-                    topicTitle: document.getElementById('topicTitle'),
-                    createTopicBtn: document.getElementById('createTopicBtn'),
-                    topicsContainer: document.getElementById('topicsContainer')
-                };
-            }
-
-            initEventListeners() {
-                this.elements.createTopicBtn.addEventListener('click', () => this.addTopic());
-                this.elements.topicTitle.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.addTopic();
-                });
-                this.elements.topicDropdown.addEventListener('change', () => this.showSelectedTopic());
-                this.elements.searchInput.addEventListener('input', this.debounce(() => {
-                    this.searchContent(this.elements.searchInput.value);
-                }, 300));
-            }
-
-            async loadFromAPI() {
-                const data = await fetchIndexData();
-                data.topics.forEach(({ id, title }) => {
-                    const topicElement = this.createTopicElement(title, id);
-                    this.elements.topicsContainer.appendChild(topicElement);
-                    this.topics.set(title.toLowerCase(), id);
-                    this.topicElements.set(id, { element: topicElement, title, questions: [] });
-                });
-
-                this.updateDropdown();
-            }
-
-            async addTopic() {
-                const title = this.elements.topicTitle.value.trim();
-                if (!title) {
-                    alert("Por favor, insira um título para o tópico.");
-                    return;
-                }
-
-                if (this.topics.has(title.toLowerCase())) {
-                    alert("Este título já existe!");
-                    return;
-                }
-
-                const topicId = `topic-${Date.now()}`;
-                const topicElement = this.createTopicElement(title, topicId);
-
+        async loadFromAPI() {
+            const data = await fetchIndexData();
+            data.topics.forEach(({ id, title, questions }) => {
+                const topicElement = this.createTopicElement(title, id, questions);
                 this.elements.topicsContainer.appendChild(topicElement);
-                this.topics.set(title.toLowerCase(), topicId);
-                this.topicElements.set(topicId, { element: topicElement, title, questions: [] });
+                this.topics.set(title.toLowerCase(), id);
+                this.topicElements.set(id, { element: topicElement, title, questions });
+            });
 
-                // Atualizar os dados no JSONBin.io
-                const data = await fetchIndexData();
-                data.topics.push({ id: topicId, title, questions: [] });
-                await saveIndexData(data);
+            this.updateDropdown();
+        }
 
-                this.updateDropdown();
-                this.elements.topicTitle.value = '';
-                topicElement.classList.add('active');
-                topicElement.scrollIntoView({ behavior: 'smooth' });
+        async addTopic() {
+            const title = this.elements.topicTitle.value.trim();
+            if (!title) {
+                alert("Por favor, insira um título para o tópico.");
+                return;
             }
 
-            createTopicElement(title, id) {
-                const div = document.createElement('div');
-                div.className = 'topic';
-                div.id = id;
-                div.innerHTML = `
-                    <h3>${this.escapeHtml(title)}</h3>
-                    <div class="form-group">
-                        <input type="text" placeholder="Sua pergunta" class="questionInput">
-                        <textarea placeholder="Resposta" class="answerInput"></textarea>
-                        <button class="addQuestionBtn">Adicionar Pergunta</button>
-                    </div>
-                    <div class="questions"></div>
-                `;
-                
-                div.querySelector('.addQuestionBtn').addEventListener('click', () => this.addQuestion(id));
-                return div;
+            if (this.topics.has(title.toLowerCase())) {
+                alert("Este título já existe!");
+                return;
             }
 
-            async addQuestion(topicId) {
-                const topicData = this.topicElements.get(topicId);
-                const questionInput = topicData.element.querySelector('.questionInput');
-                const answerInput = topicData.element.querySelector('.answerInput');
-                const questionText = questionInput.value.trim();
-                const answerText = answerInput.value.trim();
+            const topicId = `topic-${Date.now()}`;
+            const topicElement = this.createTopicElement(title, topicId, []);
 
-                if (!questionText || !answerText) {
-                    alert("Preencha ambos os campos.");
-                    return;
-                }
+            this.elements.topicsContainer.appendChild(topicElement);
+            this.topics.set(title.toLowerCase(), topicId);
+            this.topicElements.set(topicId, { element: topicElement, title, questions: [] });
 
+            // Atualizar os dados no JSONBin.io
+            const data = await fetchIndexData();
+            data.topics.push({ id: topicId, title, questions: [] });
+            await saveIndexData(data);
+
+            this.updateDropdown();
+            this.elements.topicTitle.value = '';
+            topicElement.classList.add('active');
+            topicElement.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        createTopicElement(title, id, questions = []) {
+            const div = document.createElement('div');
+            div.className = 'topic';
+            div.id = id;
+            div.innerHTML = `
+                <h3>${this.escapeHtml(title)}</h3>
+                <div class="form-group">
+                    <input type="text" placeholder="Sua pergunta" class="questionInput">
+                    <textarea placeholder="Resposta" class="answerInput"></textarea>
+                    <button class="addQuestionBtn">Adicionar Pergunta</button>
+                </div>
+                <div class="questions"></div>
+            `;
+            
+            const questionsContainer = div.querySelector('.questions');
+            
+            // Carrega as perguntas salvas para esse tópico
+            questions.forEach(({ question, answer }) => {
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'question';
                 questionDiv.innerHTML = `
-                    <b>${this.escapeHtml(questionText)}</b>
-                    <p class="answer">${this.escapeHtml(answerText)}</p>
+                    <b>${this.escapeHtml(question)}</b>
+                    <p class="answer">${this.escapeHtml(answer)}</p>
                 `;
+                questionsContainer.appendChild(questionDiv);
+            });
 
-                topicData.element.querySelector('.questions').appendChild(questionDiv);
-                topicData.questions.push({ question: questionText, answer: answerText });
+            div.querySelector('.addQuestionBtn').addEventListener('click', () => this.addQuestion(id));
 
-                // Atualizar os dados no JSONBin.io
-                const data = await fetchIndexData();
-                const topicIndex = data.topics.findIndex(t => t.id === topicId);
-                if (topicIndex !== -1) {
-                    data.topics[topicIndex].questions.push({ question: questionText, answer: answerText });
-                    await saveIndexData(data);
-                }
-
-                questionInput.value = '';
-                answerInput.value = '';
-            }
-
-            updateDropdown() {
-                this.elements.topicDropdown.innerHTML = '<option value="">Selecione um tópico</option>';
-                this.topics.forEach((id, title) => {
-                    this.elements.topicDropdown.innerHTML += `<option value="${id}">${title}</option>`;
-                });
-            }
-
-            escapeHtml(unsafe) {
-                return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
+            return div;
         }
 
-        new Forum();
-    </script>
+        async addQuestion(topicId) {
+            const topicData = this.topicElements.get(topicId);
+            const topicElement = topicData.element;
+            const questionInput = topicElement.querySelector('.questionInput');
+            const answerInput = topicElement.querySelector('.answerInput');
+            const questionText = questionInput.value.trim();
+            const answerText = answerInput.value.trim();
+
+            if (!questionText || !answerText) {
+                alert("Preencha ambos os campos.");
+                return;
+            }
+
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question';
+            questionDiv.innerHTML = `
+                <b>${this.escapeHtml(questionText)}</b>
+                <p class="answer">${this.escapeHtml(answerText)}</p>
+            `;
+
+            topicElement.querySelector('.questions').appendChild(questionDiv);
+            topicData.questions.push({ question: questionText, answer: answerText });
+
+            // Atualizar os dados no JSONBin.io
+            const data = await fetchIndexData();
+            const topicIndex = data.topics.findIndex(t => t.id === topicId);
+            if (topicIndex !== -1) {
+                data.topics[topicIndex].questions.push({ question: questionText, answer: answerText });
+                await saveIndexData(data);
+            }
+
+            questionInput.value = '';
+            answerInput.value = '';
+        }
+
+        updateDropdown() {
+            this.elements.topicDropdown.innerHTML = '<option value="">Selecione um tópico</option>';
+            this.topics.forEach((id, title) => {
+                this.elements.topicDropdown.innerHTML += `<option value="${id}">${title}</option>`;
+            });
+        }
+
+        escapeHtml(unsafe) {
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    }
+
+    new Forum();
+</script>
+
 </body>
 </html>
 
