@@ -262,8 +262,9 @@
                 const response = await fetch(API_URL, {
                     headers: { "X-Master-Key": API_KEY }
                 });
-                if (!response.ok) throw new Error("Erro ao carregar os dados.");
+                if (!response.ok) throw new Error("Erro ao carregar os dados: " + response.status);
                 const data = await response.json();
+                console.log("Dados carregados do JSONBin:", data.record);
                 return data.record || { topics: [] };
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
@@ -281,10 +282,10 @@
                     },
                     body: JSON.stringify(updatedData)
                 });
-                if (!response.ok) throw new Error("Erro ao salvar os dados.");
-                console.log("Dados salvos com sucesso!");
+                if (!response.ok) throw new Error("Erro ao salvar os dados: " + response.status);
+                console.log("Dados salvos com sucesso no JSONBin:", updatedData);
             } catch (error) {
-                console.error("Erro ao salvar:", error);
+                console.error("Erro ao salvar dados:", error);
             }
         }
 
@@ -305,6 +306,7 @@
                     createTopicBtn: document.getElementById('createTopicBtn'),
                     topicsContainer: document.getElementById('topicsContainer')
                 };
+                console.log("Elementos inicializados:", this.elements);
             }
 
             initEventListeners() {
@@ -318,6 +320,7 @@
 
             async loadFromAPI() {
                 const data = await fetchIndexData();
+                console.log("Carregando tópicos da API:", data.topics);
                 data.topics.forEach(({ id, title, questions }) => {
                     const topicElement = this.createTopicElement(title, id, questions);
                     this.elements.topicsContainer.appendChild(topicElement);
@@ -375,6 +378,7 @@
                 });
 
                 div.querySelector('.addQuestionBtn').addEventListener('click', () => this.addQuestion(id));
+                console.log(`Tópico criado: ${title} (ID: ${id})`);
                 return div;
             }
 
@@ -415,6 +419,8 @@
                 if (topicIndex !== -1) {
                     data.topics[topicIndex].questions = topicData.questions;
                     await saveIndexData(data);
+                } else {
+                    console.error(`Tópico com ID ${topicId} não encontrado na API para adicionar pergunta`);
                 }
 
                 questionInput.value = '';
@@ -425,6 +431,10 @@
                 if (!confirm("Tem certeza que deseja excluir esta pergunta?")) return;
 
                 const topicData = this.topicElements.get(topicId);
+                if (!topicData) {
+                    console.error(`Tópico com ID ${topicId} não encontrado para exclusão`);
+                    return;
+                }
                 const topicElement = topicData.element;
                 topicData.questions = topicData.questions.filter(q => q.question !== questionText);
 
@@ -433,6 +443,8 @@
                 if (topicIndex !== -1) {
                     data.topics[topicIndex].questions = topicData.questions;
                     await saveIndexData(data);
+                } else {
+                    console.error(`Tópico com ID ${topicId} não encontrado na API para exclusão`);
                 }
 
                 const questionsContainer = topicElement.querySelector('.questions');
@@ -448,6 +460,10 @@
                 if (!newQuestion || !newAnswer) return;
 
                 const topicData = this.topicElements.get(topicId);
+                if (!topicData) {
+                    console.error(`Tópico com ID ${topicId} não encontrado para edição`);
+                    return;
+                }
                 const topicElement = topicData.element;
                 const questionIndex = topicData.questions.findIndex(q => q.question === oldQuestionText);
                 
@@ -459,6 +475,8 @@
                     if (topicIdx !== -1) {
                         data.topics[topicIdx].questions = topicData.questions;
                         await saveIndexData(data);
+                    } else {
+                        console.error(`Tópico com ID ${topicId} não encontrado na API para edição`);
                     }
 
                     const questionsContainer = topicElement.querySelector('.questions');
@@ -471,6 +489,7 @@
 
             showSelectedTopic() {
                 const selectedId = this.elements.topicDropdown.value;
+                console.log("Tópico selecionado:", selectedId);
                 this.topicElements.forEach((data, id) => {
                     data.element.style.display = id === selectedId ? 'block' : 'none';
                 });
@@ -481,10 +500,12 @@
                 this.topics.forEach((id, title) => {
                     this.elements.topicDropdown.innerHTML += `<option value="${id}">${this.escapeHtml(title)}</option>`;
                 });
+                console.log("Dropdown atualizado com tópicos:", this.topics);
             }
 
             searchTopicsAndQuestions() {
                 const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
+                console.log("Pesquisando por:", searchTerm);
                 this.topicElements.forEach((data, id) => {
                     const topicElement = data.element;
                     const titleMatch = data.title.toLowerCase().includes(searchTerm);
@@ -506,15 +527,18 @@
 
             escapeHtml(unsafe) {
                 return unsafe
-                    .replace(/&/g, "&")
-                    .replace(/</g, "<")
-                    .replace(/>/g, ">")
-                    .replace(/"/g, """)
-                    .replace(/'/g, "'");
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
             }
         }
 
-        new Forum();
+        window.onload = () => {
+            console.log("Iniciando o Fórum...");
+            new Forum();
+        };
     </script>
 </body>
 </html>
