@@ -244,9 +244,9 @@ button:hover {
         
      </style>   
 
-   <script>
-    const BIN_ID = "67d43e708a456b796675bb3e"; // Substitua pelo seu ID do Bin
-    const API_KEY = "$2a$10$/QVRThELIzbQEwve.0EZv.E4lFz/9bn0.4.Kpw1UIe5FETAk.AEDy"; // Substitua pela sua Master Key (NÃO COMPARTILHE)
+  <script>
+    const BIN_ID = "XXXXXXXXXXXX"; // Substitua pelo seu ID do Bin
+    const API_KEY = "SUA_MASTER_KEY"; // Substitua pela sua Master Key (NÃO COMPARTILHE)
     const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     // 🔹 Buscar os dados do JSONBin.io
@@ -291,7 +291,7 @@ button:hover {
             this.topics = new Map();
             this.topicElements = new Map();
             this.initElements();
-            this.loadFromAPI(); // Carrega os dados do JSONBin.io
+            this.loadFromAPI();
             this.initEventListeners();
         }
 
@@ -344,7 +344,6 @@ button:hover {
             this.topics.set(title.toLowerCase(), topicId);
             this.topicElements.set(topicId, { element: topicElement, title, questions: [] });
 
-            // Atualizar os dados no JSONBin.io
             const data = await fetchIndexData();
             data.topics.push({ id: topicId, title, questions: [] });
             await saveIndexData(data);
@@ -370,20 +369,29 @@ button:hover {
             
             const questionsContainer = div.querySelector('.questions');
             
-            // Carrega as perguntas salvas para esse tópico
             questions.forEach(({ question, answer }) => {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question';
-                questionDiv.innerHTML = `
-                    <b>${this.escapeHtml(question)}</b>
-                    <p class="answer">${this.escapeHtml(answer)}</p>
-                `;
-                questionsContainer.appendChild(questionDiv);
+                questionsContainer.appendChild(this.createQuestionElement(id, question, answer));
             });
 
             div.querySelector('.addQuestionBtn').addEventListener('click', () => this.addQuestion(id));
 
             return div;
+        }
+
+        createQuestionElement(topicId, questionText, answerText) {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question';
+            questionDiv.innerHTML = `
+                <b>${this.escapeHtml(questionText)}</b>
+                <p class="answer">${this.escapeHtml(answerText)}</p>
+                <button class="edit-btn">Editar</button>
+                <button class="delete-btn">Excluir</button>
+            `;
+
+            questionDiv.querySelector('.delete-btn').addEventListener('click', () => this.deleteQuestion(topicId, questionText));
+            questionDiv.querySelector('.edit-btn').addEventListener('click', () => this.editQuestion(topicId, questionText, answerText));
+
+            return questionDiv;
         }
 
         async addQuestion(topicId) {
@@ -399,17 +407,9 @@ button:hover {
                 return;
             }
 
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'question';
-            questionDiv.innerHTML = `
-                <b>${this.escapeHtml(questionText)}</b>
-                <p class="answer">${this.escapeHtml(answerText)}</p>
-            `;
-
-            topicElement.querySelector('.questions').appendChild(questionDiv);
+            topicElement.querySelector('.questions').appendChild(this.createQuestionElement(topicId, questionText, answerText));
             topicData.questions.push({ question: questionText, answer: answerText });
 
-            // Atualizar os dados no JSONBin.io
             const data = await fetchIndexData();
             const topicIndex = data.topics.findIndex(t => t.id === topicId);
             if (topicIndex !== -1) {
@@ -421,11 +421,35 @@ button:hover {
             answerInput.value = '';
         }
 
+        async deleteQuestion(topicId, questionText) {
+            if (!confirm("Tem certeza que deseja excluir esta pergunta?")) return;
+
+            const topicData = this.topicElements.get(topicId);
+            topicData.questions = topicData.questions.filter(q => q.question !== questionText);
+
+            const data = await fetchIndexData();
+            const topicIndex = data.topics.findIndex(t => t.id === topicId);
+            if (topicIndex !== -1) {
+                data.topics[topicIndex].questions = topicData.questions;
+                await saveIndexData(data);
+            }
+
+            this.showSelectedTopic();
+        }
+
+        async editQuestion(topicId, questionText, answerText) {
+            const newQuestion = prompt("Edite sua pergunta:", questionText);
+            const newAnswer = prompt("Edite sua resposta:", answerText);
+            if (!newQuestion || !newAnswer) return;
+
+            this.deleteQuestion(topicId, questionText);
+            this.addQuestion(topicId, newQuestion, newAnswer);
+        }
+
         showSelectedTopic() {
             const selectedId = this.elements.topicDropdown.value;
             this.topicElements.forEach((data, id) => {
-                const isActive = id === selectedId;
-                data.element.style.display = isActive ? 'block' : 'none';
+                data.element.style.display = id === selectedId ? 'block' : 'none';
             });
         }
 
