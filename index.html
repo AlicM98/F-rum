@@ -189,6 +189,8 @@
         .question b {
             color: var(--text-color);
             font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
         }
 
         .answer {
@@ -198,11 +200,16 @@
             border-radius: 6px;
             color: var(--muted-text);
             font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .question-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
         }
 
         .edit-btn, .delete-btn {
-            position: absolute;
-            top: 8px;
             padding: 6px 10px;
             font-size: 0.8rem;
             border-radius: 4px;
@@ -211,7 +218,6 @@
         }
 
         .edit-btn {
-            right: 70px;
             background: #10B981;
         }
 
@@ -221,7 +227,6 @@
         }
 
         .delete-btn {
-            right: 10px;
             background: var(--delete-color);
         }
 
@@ -308,6 +313,7 @@
                     if (e.key === 'Enter') this.addTopic();
                 });
                 this.elements.topicDropdown.addEventListener('change', () => this.showSelectedTopic());
+                this.elements.searchInput.addEventListener('input', () => this.searchTopicsAndQuestions());
             }
 
             async loadFromAPI() {
@@ -378,8 +384,10 @@
                 questionDiv.innerHTML = `
                     <b>${this.escapeHtml(questionText)}</b>
                     <p class="answer">${this.escapeHtml(answerText)}</p>
-                    <button class="edit-btn">Editar</button>
-                    <button class="delete-btn">Excluir</button>
+                    <div class="question-buttons">
+                        <button class="edit-btn">Editar</button>
+                        <button class="delete-btn">Excluir</button>
+                    </div>
                 `;
                 questionDiv.querySelector('.edit-btn').addEventListener('click', () => this.editQuestion(topicId, questionText, answerText));
                 questionDiv.querySelector('.delete-btn').addEventListener('click', () => this.deleteQuestion(topicId, questionText));
@@ -475,13 +483,34 @@
                 });
             }
 
+            searchTopicsAndQuestions() {
+                const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
+                this.topicElements.forEach((data, id) => {
+                    const topicElement = data.element;
+                    const titleMatch = data.title.toLowerCase().includes(searchTerm);
+                    let questionsMatch = false;
+
+                    const questionsContainer = topicElement.querySelector('.questions');
+                    const questionElements = questionsContainer.querySelectorAll('.question');
+                    questionElements.forEach(questionElement => {
+                        const questionText = questionElement.querySelector('b').textContent.toLowerCase();
+                        const answerText = questionElement.querySelector('.answer').textContent.toLowerCase();
+                        const matches = questionText.includes(searchTerm) || answerText.includes(searchTerm);
+                        questionElement.style.display = matches || searchTerm === '' ? 'block' : 'none';
+                        if (matches) questionsMatch = true;
+                    });
+
+                    topicElement.style.display = (titleMatch || questionsMatch || searchTerm === '') && id === this.elements.topicDropdown.value ? 'block' : 'none';
+                });
+            }
+
             escapeHtml(unsafe) {
                 return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
+                    .replace(/&/g, "&")
+                    .replace(/</g, "<")
+                    .replace(/>/g, ">")
+                    .replace(/"/g, """)
+                    .replace(/'/g, "'");
             }
         }
 
